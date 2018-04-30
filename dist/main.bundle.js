@@ -785,7 +785,10 @@ var ResultComponent = /** @class */ (function () {
                     .toString();
             var selectedBoundaries = null;
             if (this.sharedDataService.data.boundaries)
-                selectedBoundaries = ([].concat.apply([], this.sharedDataService.data.boundaries.map(function (f) { return f.Filters; }))).filter(function (r) { return r.Selected === true; });
+                selectedBoundaries = ([].concat.apply([], this.sharedDataService.data.boundaries.map(function (f) { return f.Filters; })))
+                    .filter(function (r) { return r.Selected === true; })
+                    .map(function (t) { return t.BoundaryOptionId; })
+                    .toString();
             this.dataService.getResultMenu(selectedFilters, selectedBoundaries)
                 .subscribe(function (data) {
                 console.log('--- Result ranking ---', data);
