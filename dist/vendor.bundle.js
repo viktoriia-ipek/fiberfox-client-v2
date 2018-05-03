@@ -95304,6 +95304,467 @@ var VERSION = new __WEBPACK_IMPORTED_MODULE_1__angular_core__["Version"]('5.2.9'
 
 /***/ }),
 
+/***/ "./node_modules/angular-froala-wysiwyg/editor/editor.directive.js":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return FroalaEditorDirective; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_core__ = __webpack_require__("./node_modules/@angular/core/esm5/core.js");
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__angular_forms__ = __webpack_require__("./node_modules/@angular/forms/esm5/forms.js");
+
+
+var FroalaEditorDirective = (function () {
+    function FroalaEditorDirective(el, zone) {
+        this.zone = zone;
+        // editor options
+        this._opts = {
+            immediateAngularModelUpdate: false,
+            angularIgnoreAttrs: null
+        };
+        this.SPECIAL_TAGS = ['img', 'button', 'input', 'a'];
+        this.INNER_HTML_ATTR = 'innerHTML';
+        this._hasSpecialTag = false;
+        this._listeningEvents = [];
+        this._editorInitialized = false;
+        this._oldModel = null;
+        // Begin ControlValueAccesor methods.
+        this.onChange = function (_) { };
+        this.onTouched = function () { };
+        // froalaModel directive as output: update model if editor contentChanged
+        this.froalaModelChange = new __WEBPACK_IMPORTED_MODULE_0__angular_core__["EventEmitter"]();
+        // froalaInit directive as output: send manual editor initialization
+        this.froalaInit = new __WEBPACK_IMPORTED_MODULE_0__angular_core__["EventEmitter"]();
+        var element = el.nativeElement;
+        // check if the element is a special tag
+        if (this.SPECIAL_TAGS.indexOf(element.tagName.toLowerCase()) != -1) {
+            this._hasSpecialTag = true;
+        }
+        // jquery wrap and store element
+        this._$element = $(element);
+        this.zone = zone;
+    }
+    // Form model content changed.
+    // Form model content changed.
+    FroalaEditorDirective.prototype.writeValue = 
+    // Form model content changed.
+    function (content) {
+        this.updateEditor(content);
+    };
+    FroalaEditorDirective.prototype.registerOnChange = function (fn) { this.onChange = fn; };
+    FroalaEditorDirective.prototype.registerOnTouched = function (fn) { this.onTouched = fn; };
+    Object.defineProperty(FroalaEditorDirective.prototype, "froalaEditor", {
+        set: 
+        // End ControlValueAccesor methods.
+        // froalaEditor directive as input: store the editor options
+        function (opts) {
+            this._opts = opts || this._opts;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(FroalaEditorDirective.prototype, "froalaModel", {
+        set: 
+        // froalaModel directive as input: store initial editor content
+        function (content) {
+            this.updateEditor(content);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    // Update editor with model contents.
+    // Update editor with model contents.
+    FroalaEditorDirective.prototype.updateEditor = 
+    // Update editor with model contents.
+    function (content) {
+        if (JSON.stringify(this._oldModel) == JSON.stringify(content)) {
+            return;
+        }
+        this._oldModel = content;
+        if (this._editorInitialized) {
+            this._$element.froalaEditor('html.set', content);
+        }
+        else {
+            this._$element.html(content);
+        }
+    };
+    // update model if editor contentChanged
+    // update model if editor contentChanged
+    FroalaEditorDirective.prototype.updateModel = 
+    // update model if editor contentChanged
+    function () {
+        var _this = this;
+        this.zone.run(function () {
+            var modelContent = null;
+            if (_this._hasSpecialTag) {
+                var attributeNodes = _this._$element[0].attributes;
+                var attrs = {};
+                for (var i = 0; i < attributeNodes.length; i++) {
+                    var attrName = attributeNodes[i].name;
+                    if (_this._opts.angularIgnoreAttrs && _this._opts.angularIgnoreAttrs.indexOf(attrName) != -1) {
+                        continue;
+                    }
+                    attrs[attrName] = attributeNodes[i].value;
+                }
+                if (_this._$element[0].innerHTML) {
+                    attrs[_this.INNER_HTML_ATTR] = _this._$element[0].innerHTML;
+                }
+                modelContent = attrs;
+            }
+            else {
+                var returnedHtml = _this._$element.froalaEditor('html.get');
+                if (typeof returnedHtml === 'string') {
+                    modelContent = returnedHtml;
+                }
+            }
+            _this._oldModel = modelContent;
+            // Update froalaModel.
+            // Update froalaModel.
+            _this.froalaModelChange.emit(modelContent);
+            // Update form model.
+            // Update form model.
+            _this.onChange(modelContent);
+        });
+    };
+    // register event on jquery element
+    // register event on jquery element
+    FroalaEditorDirective.prototype.registerEvent = 
+    // register event on jquery element
+    function (element, eventName, callback) {
+        if (!element || !eventName || !callback) {
+            return;
+        }
+        this._listeningEvents.push(eventName);
+        element.on(eventName, callback);
+    };
+    FroalaEditorDirective.prototype.initListeners = function () {
+        var self = this;
+        // bind contentChange and keyup event to froalaModel
+        this.registerEvent(this._$element, 'froalaEditor.contentChanged', function () {
+            setTimeout(function () {
+                self.updateModel();
+            }, 0);
+        });
+        if (this._opts.immediateAngularModelUpdate) {
+            this.registerEvent(this._editor, 'keyup', function () {
+                setTimeout(function () {
+                    self.updateModel();
+                }, 0);
+            });
+        }
+    };
+    // register events from editor options
+    // register events from editor options
+    FroalaEditorDirective.prototype.registerFroalaEvents = 
+    // register events from editor options
+    function () {
+        if (!this._opts.events) {
+            return;
+        }
+        for (var eventName in this._opts.events) {
+            if (this._opts.events.hasOwnProperty(eventName)) {
+                this.registerEvent(this._$element, eventName, this._opts.events[eventName]);
+            }
+        }
+    };
+    FroalaEditorDirective.prototype.createEditor = function () {
+        var _this = this;
+        if (this._editorInitialized) {
+            return;
+        }
+        this.setContent(true);
+        // Registering events before initializing the editor will bind the initialized event correctly.
+        this.registerFroalaEvents();
+        this.initListeners();
+        // init editor
+        this.zone.runOutsideAngular(function () {
+            _this._editor = _this._$element.froalaEditor(_this._opts).data('froala.editor').$el;
+        });
+        this._editorInitialized = true;
+    };
+    FroalaEditorDirective.prototype.setHtml = function () {
+        this._$element.froalaEditor('html.set', this._model || '', true);
+        // This will reset the undo stack everytime the model changes externally. Can we fix this?
+        this._$element.froalaEditor('undo.reset');
+        this._$element.froalaEditor('undo.saveStep');
+    };
+    FroalaEditorDirective.prototype.setContent = function (firstTime) {
+        if (firstTime === void 0) { firstTime = false; }
+        var self = this;
+        // Set initial content
+        if (this._model || this._model == '') {
+            this._oldModel = this._model;
+            if (this._hasSpecialTag) {
+                var tags = this._model;
+                // add tags on element
+                if (tags) {
+                    for (var attr in tags) {
+                        if (tags.hasOwnProperty(attr) && attr != this.INNER_HTML_ATTR) {
+                            this._$element.attr(attr, tags[attr]);
+                        }
+                    }
+                    if (tags.hasOwnProperty(this.INNER_HTML_ATTR)) {
+                        this._$element[0].innerHTML = tags[this.INNER_HTML_ATTR];
+                    }
+                }
+            }
+            else {
+                if (firstTime) {
+                    this.registerEvent(this._$element, 'froalaEditor.initialized', function () {
+                        self.setHtml();
+                    });
+                }
+                else {
+                    self.setHtml();
+                }
+            }
+        }
+    };
+    FroalaEditorDirective.prototype.destroyEditor = function () {
+        if (this._editorInitialized) {
+            this._$element.off(this._listeningEvents.join(" "));
+            this._editor.off('keyup');
+            this._$element.froalaEditor('destroy');
+            this._listeningEvents.length = 0;
+            this._editorInitialized = false;
+        }
+    };
+    FroalaEditorDirective.prototype.getEditor = function () {
+        if (this._$element) {
+            return this._$element.froalaEditor.bind(this._$element);
+        }
+        return null;
+    };
+    // send manual editor initialization
+    // send manual editor initialization
+    FroalaEditorDirective.prototype.generateManualController = 
+    // send manual editor initialization
+    function () {
+        var self = this;
+        var controls = {
+            initialize: this.createEditor.bind(this),
+            destroy: this.destroyEditor.bind(this),
+            getEditor: this.getEditor.bind(this),
+        };
+        this.froalaInit.emit(controls);
+    };
+    // TODO not sure if ngOnInit is executed after @inputs
+    // TODO not sure if ngOnInit is executed after @inputs
+    FroalaEditorDirective.prototype.ngOnInit = 
+    // TODO not sure if ngOnInit is executed after @inputs
+    function () {
+        // check if output froalaInit is present. Maybe observers is private and should not be used?? TODO how to better test that an output directive is present.
+        if (!this.froalaInit.observers.length) {
+            this.createEditor();
+        }
+        else {
+            this.generateManualController();
+        }
+    };
+    FroalaEditorDirective.prototype.ngOnDestroy = function () {
+        this.destroyEditor();
+    };
+    FroalaEditorDirective.decorators = [
+        { type: __WEBPACK_IMPORTED_MODULE_0__angular_core__["Directive"], args: [{
+                    selector: '[froalaEditor]',
+                    providers: [{
+                            provide: __WEBPACK_IMPORTED_MODULE_1__angular_forms__["NG_VALUE_ACCESSOR"], useExisting: Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["forwardRef"])(function () { return FroalaEditorDirective; }),
+                            multi: true
+                        }]
+                },] },
+    ];
+    /** @nocollapse */
+    FroalaEditorDirective.ctorParameters = function () { return [
+        { type: __WEBPACK_IMPORTED_MODULE_0__angular_core__["ElementRef"], },
+        { type: __WEBPACK_IMPORTED_MODULE_0__angular_core__["NgZone"], },
+    ]; };
+    FroalaEditorDirective.propDecorators = {
+        "froalaEditor": [{ type: __WEBPACK_IMPORTED_MODULE_0__angular_core__["Input"] },],
+        "froalaModel": [{ type: __WEBPACK_IMPORTED_MODULE_0__angular_core__["Input"] },],
+        "froalaModelChange": [{ type: __WEBPACK_IMPORTED_MODULE_0__angular_core__["Output"] },],
+        "froalaInit": [{ type: __WEBPACK_IMPORTED_MODULE_0__angular_core__["Output"] },],
+    };
+    return FroalaEditorDirective;
+}());
+
+//# sourceMappingURL=editor.directive.js.map
+
+/***/ }),
+
+/***/ "./node_modules/angular-froala-wysiwyg/editor/editor.module.js":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return FroalaEditorModule; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_core__ = __webpack_require__("./node_modules/@angular/core/esm5/core.js");
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__editor_directive__ = __webpack_require__("./node_modules/angular-froala-wysiwyg/editor/editor.directive.js");
+
+
+var FroalaEditorModule = (function () {
+    function FroalaEditorModule() {
+    }
+    FroalaEditorModule.forRoot = function () {
+        return { ngModule: FroalaEditorModule, providers: [] };
+    };
+    FroalaEditorModule.decorators = [
+        { type: __WEBPACK_IMPORTED_MODULE_0__angular_core__["NgModule"], args: [{
+                    declarations: [__WEBPACK_IMPORTED_MODULE_1__editor_directive__["a" /* FroalaEditorDirective */]],
+                    exports: [__WEBPACK_IMPORTED_MODULE_1__editor_directive__["a" /* FroalaEditorDirective */]]
+                },] },
+    ];
+    /** @nocollapse */
+    FroalaEditorModule.ctorParameters = function () { return []; };
+    return FroalaEditorModule;
+}());
+
+//# sourceMappingURL=editor.module.js.map
+
+/***/ }),
+
+/***/ "./node_modules/angular-froala-wysiwyg/editor/index.js":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__editor_directive__ = __webpack_require__("./node_modules/angular-froala-wysiwyg/editor/editor.directive.js");
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return __WEBPACK_IMPORTED_MODULE_0__editor_directive__["a"]; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__editor_module__ = __webpack_require__("./node_modules/angular-froala-wysiwyg/editor/editor.module.js");
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return __WEBPACK_IMPORTED_MODULE_1__editor_module__["a"]; });
+
+
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ "./node_modules/angular-froala-wysiwyg/index.js":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "FERootModule", function() { return FERootModule; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_core__ = __webpack_require__("./node_modules/@angular/core/esm5/core.js");
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__editor__ = __webpack_require__("./node_modules/angular-froala-wysiwyg/editor/index.js");
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__view__ = __webpack_require__("./node_modules/angular-froala-wysiwyg/view/index.js");
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "FroalaEditorDirective", function() { return __WEBPACK_IMPORTED_MODULE_1__editor__["a"]; });
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "FroalaEditorModule", function() { return __WEBPACK_IMPORTED_MODULE_1__editor__["b"]; });
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "FroalaViewDirective", function() { return __WEBPACK_IMPORTED_MODULE_2__view__["a"]; });
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "FroalaViewModule", function() { return __WEBPACK_IMPORTED_MODULE_2__view__["b"]; });
+
+
+
+
+
+var MODULES = [
+    __WEBPACK_IMPORTED_MODULE_1__editor__["b" /* FroalaEditorModule */],
+    __WEBPACK_IMPORTED_MODULE_2__view__["b" /* FroalaViewModule */]
+];
+var FERootModule = (function () {
+    function FERootModule() {
+    }
+    FERootModule.decorators = [
+        { type: __WEBPACK_IMPORTED_MODULE_0__angular_core__["NgModule"], args: [{
+                    imports: [
+                        __WEBPACK_IMPORTED_MODULE_1__editor__["b" /* FroalaEditorModule */].forRoot(),
+                        __WEBPACK_IMPORTED_MODULE_2__view__["b" /* FroalaViewModule */].forRoot()
+                    ],
+                    exports: MODULES
+                },] },
+    ];
+    /** @nocollapse */
+    FERootModule.ctorParameters = function () { return []; };
+    return FERootModule;
+}());
+
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ "./node_modules/angular-froala-wysiwyg/view/index.js":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__view_directive__ = __webpack_require__("./node_modules/angular-froala-wysiwyg/view/view.directive.js");
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return __WEBPACK_IMPORTED_MODULE_0__view_directive__["a"]; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__view_module__ = __webpack_require__("./node_modules/angular-froala-wysiwyg/view/view.module.js");
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return __WEBPACK_IMPORTED_MODULE_1__view_module__["a"]; });
+
+
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ "./node_modules/angular-froala-wysiwyg/view/view.directive.js":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return FroalaViewDirective; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_core__ = __webpack_require__("./node_modules/@angular/core/esm5/core.js");
+
+var FroalaViewDirective = (function () {
+    function FroalaViewDirective(renderer, element) {
+        this.renderer = renderer;
+        this._element = element.nativeElement;
+    }
+    Object.defineProperty(FroalaViewDirective.prototype, "froalaView", {
+        set: 
+        // update content model as it comes
+        function (content) {
+            this._element.innerHTML = content;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    FroalaViewDirective.prototype.ngAfterViewInit = function () {
+        this.renderer.setElementClass(this._element, "fr-view", true);
+    };
+    FroalaViewDirective.decorators = [
+        { type: __WEBPACK_IMPORTED_MODULE_0__angular_core__["Directive"], args: [{
+                    selector: '[froalaView]'
+                },] },
+    ];
+    /** @nocollapse */
+    FroalaViewDirective.ctorParameters = function () { return [
+        { type: __WEBPACK_IMPORTED_MODULE_0__angular_core__["Renderer"], },
+        { type: __WEBPACK_IMPORTED_MODULE_0__angular_core__["ElementRef"], },
+    ]; };
+    FroalaViewDirective.propDecorators = {
+        "froalaView": [{ type: __WEBPACK_IMPORTED_MODULE_0__angular_core__["Input"] },],
+    };
+    return FroalaViewDirective;
+}());
+
+//# sourceMappingURL=view.directive.js.map
+
+/***/ }),
+
+/***/ "./node_modules/angular-froala-wysiwyg/view/view.module.js":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return FroalaViewModule; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_core__ = __webpack_require__("./node_modules/@angular/core/esm5/core.js");
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__view_directive__ = __webpack_require__("./node_modules/angular-froala-wysiwyg/view/view.directive.js");
+
+
+var FroalaViewModule = (function () {
+    function FroalaViewModule() {
+    }
+    FroalaViewModule.forRoot = function () {
+        return { ngModule: FroalaViewModule, providers: [] };
+    };
+    FroalaViewModule.decorators = [
+        { type: __WEBPACK_IMPORTED_MODULE_0__angular_core__["NgModule"], args: [{
+                    declarations: [__WEBPACK_IMPORTED_MODULE_1__view_directive__["a" /* FroalaViewDirective */]],
+                    exports: [__WEBPACK_IMPORTED_MODULE_1__view_directive__["a" /* FroalaViewDirective */]]
+                },] },
+    ];
+    /** @nocollapse */
+    FroalaViewModule.ctorParameters = function () { return []; };
+    return FroalaViewModule;
+}());
+
+//# sourceMappingURL=view.module.js.map
+
+/***/ }),
+
 /***/ "./node_modules/primeng/components/common/shared.js":
 /***/ (function(module, exports, __webpack_require__) {
 
