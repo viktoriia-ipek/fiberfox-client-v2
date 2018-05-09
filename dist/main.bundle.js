@@ -798,7 +798,8 @@ var ResultComponent = /** @class */ (function () {
                 console.log('--- Result ranking ---', data);
                 _this.relevantMenu = data.filter(function (d) { return d.Ranking > 0; });
                 if (_this.relevantMenu && _this.relevantMenu.length > 0) {
-                    _this.showArticle(_this.relevantMenu[0].ResultMenuId);
+                    console.log(_this.relevantMenu.map(function (m) { return m.ResultMenuId; }).toString());
+                    _this.getAllArticles(_this.relevantMenu.map(function (m) { return m.ResultMenuId; }).toString());
                 }
                 _this.othersMenu = data.filter(function (d) { return d.Ranking <= 0; });
             });
@@ -810,7 +811,8 @@ var ResultComponent = /** @class */ (function () {
                     console.log(data);
                     _this.relevantMenu = data;
                     if (_this.relevantMenu && _this.relevantMenu.length > 0) {
-                        _this.showArticle(_this.relevantMenu[0].ResultMenuId);
+                        console.log(_this.relevantMenu.map(function (m) { return m.ResultMenuId; }).toString());
+                        _this.getAllArticles(_this.relevantMenu.map(function (m) { return m.ResultMenuId; }).toString());
                     }
                 });
                 this.isQuestion = true;
@@ -850,6 +852,16 @@ var ResultComponent = /** @class */ (function () {
         catch (error) {
             console.log("Log error. Nevermind the dog", error);
         }
+    };
+    ResultComponent.prototype.getAllArticles = function (menuList) {
+        var _this = this;
+        this.dataService.getMultipleArticles(menuList)
+            .subscribe(function (d) {
+            _this.article = d[0];
+            d.forEach(function (element) {
+                _this.article.Description += d.Description;
+            });
+        });
     };
     __decorate([
         core_1.ViewChild('leftBar'),
@@ -929,6 +941,10 @@ var ResultService = /** @class */ (function (_super) {
     };
     ResultService.prototype.saveOperationLog = function (logData) {
         return this.post(this.hostAPI + "/log", logData, this.authorisedOptions())
+            .map(function (res) { return res.json(); });
+    };
+    ResultService.prototype.getMultipleArticles = function (menuIdList) {
+        return this.post(this.hostAPI + "/front/articlelist", { list: menuIdList }, this.authorisedOptions())
             .map(function (res) { return res.json(); });
     };
     ResultService = __decorate([
@@ -1536,7 +1552,7 @@ exports.ApprovalComponent = ApprovalComponent;
 /***/ "./src/app/admin/article/article.component.html":
 /***/ (function(module, exports) {
 
-module.exports = "<section class=\"content-header\">\r\n    <h1>\r\n        Articles\r\n        <small>CRUD</small>\r\n    </h1>\r\n</section>\r\n<section class=\"content container-fluid\">\r\n    <p-table [value]=\"articles\" selectionMode=\"single\" [(selection)]=\"selectedArticle\" (onRowSelect)=\"onRowSelect($event)\">\r\n        <ng-template pTemplate=\"header\">\r\n            <tr>\r\n                <th>Title</th>\r\n                <th>Description</th>\r\n                <th>Result Menu</th>\r\n                <th>Remove</th>\r\n            </tr>\r\n        </ng-template>\r\n        <ng-template pTemplate=\"body\" let-rowData>\r\n            <tr [pSelectableRow]=\"rowData\">\r\n                <td>{{rowData.Title}}</td>\r\n                <td>{{rowData.Description | slice:0:99}}</td>\r\n                <td>{{rowData.ResultMenuName}}</td>\r\n                <td>\r\n                    <a class=\"btn-danger\" (click)=\"remove(rowData.ArticleId)\">Remove</a>\r\n                </td>\r\n            </tr>\r\n        </ng-template>\r\n    </p-table>\r\n    <button (click)=\"addNew()\" class=\"m-t-20 btn btn-primary\">\r\n        <i class=\"fa fa-plus\"></i>&nbsp; Add</button>\r\n\r\n    <!-- edit modal -->\r\n    <p-dialog header=\"Article Details\" [(visible)]=\"displayDialog\" [responsive]=\"true\" showEffect=\"fade\" [modal]=\"true\" [width]=\"800\">\r\n        <div class=\"ui-g ui-fluid\" *ngIf=\"article\">\r\n            <div class=\"ui-g-12\">\r\n                <div class=\"ui-g-2\">\r\n                    <label for=\"title\">Title</label>\r\n                </div>\r\n                <div class=\"ui-g-10 p-0\">\r\n                    <input class=\"form-control\" required pInputText id=\"title\" [(ngModel)]=\"article.Title\" />\r\n                </div>\r\n            </div>\r\n            <div class=\"ui-g-12\">\r\n                <div class=\"ui-g-2\">\r\n                    <label for=\"description\">Description</label>\r\n                </div>\r\n                <div class=\"ui-g-10 p-0\">\r\n                    <!-- <p-editor [(ngModel)]=\"article.Description\" required pInputText id=\"description\" [style]=\"{'height':'200px'}\"></p-editor> -->\r\n                    <div [froalaEditor] [(ngModel)]=\"article.Description\" required pInputText id=\"description\" [style]=\"{'height':'200px'}\"></div>\r\n                    <!-- <app-ngx-editor [placeholder]=\"'Enter text here...'\" [spellcheck]=\"true\" [(ngModel)]=\"article.Description\" required pInputText id=\"description\" [style]=\"{'height':'200px'}\"></app-ngx-editor> -->\r\n                    <!-- <quill-editor [(ngModel)]=\"article.Description\" required pInputText id=\"description\" [style]=\"{'height':'200px'}\"></quill-editor> -->\r\n                </div>\r\n            </div>\r\n            <div class=\"ui-g-12\">\r\n                <div class=\"ui-g-2\">\r\n                    <label for=\"ResultMenuId\">Result Menu</label>\r\n                </div>\r\n                <div *ngIf='resultMenu && resultMenu.length > 0' class=\"form-group\" [ngClass]=\"{'has-error':ResultMenuId.invalid && ResultMenuId.touched}\"\r\n                    class=\"ui-g-10 p-0\">\r\n                    <select [(ngModel)]=\"article.ResultMenuId\" #ResultMenuId=\"ngModel\" required class=\"form-control\" name=\"ResultMenuId\">\r\n                        <option *ngFor=\"let menu of resultMenu\" [value]=\"menu.ResultMenuId\">{{menu.Name}}</option>\r\n                    </select>\r\n                </div>\r\n            </div>\r\n        </div>\r\n        <p-footer>\r\n            <div class=\"ui-dialog-buttonpane ui-helper-clearfix\">\r\n                <button (click)=\"close()\" class=\"m-t-20 btn btn-danger\">\r\n                    <i class=\"fa fa-close\"></i>&nbsp; Cancel</button>\r\n                <button (click)=\"save()\" class=\"m-t-20 btn btn-primary\">\r\n                    <i class=\"fa fa-check\"></i>&nbsp; Save</button>\r\n            </div>\r\n        </p-footer>\r\n    </p-dialog>\r\n</section>"
+module.exports = "<section class=\"content-header\">\r\n    <h1>\r\n        Articles\r\n        <small>CRUD</small>\r\n    </h1>\r\n</section>\r\n<section class=\"content container-fluid\">\r\n    <p-table [value]=\"articles\" selectionMode=\"single\" [(selection)]=\"selectedArticle\" (onRowSelect)=\"onRowSelect($event)\">\r\n        <ng-template pTemplate=\"header\">\r\n            <tr>\r\n                <th>Title</th>\r\n                <th>Description</th>\r\n                <th>Result Menu</th>\r\n                <th>Remove</th>\r\n            </tr>\r\n        </ng-template>\r\n        <ng-template pTemplate=\"body\" let-rowData>\r\n            <tr [pSelectableRow]=\"rowData\">\r\n                <td>{{rowData.Title}}</td>\r\n                <td>{{rowData.Description | slice:0:99}}</td>\r\n                <td>{{rowData.ResultMenuName}}</td>\r\n                <td>\r\n                    <a class=\"btn-danger\" (click)=\"remove(rowData.ArticleId)\">Remove</a>\r\n                </td>\r\n            </tr>\r\n        </ng-template>\r\n    </p-table>\r\n    <button (click)=\"addNew()\" class=\"m-t-20 btn btn-primary\">\r\n        <i class=\"fa fa-plus\"></i>&nbsp; Add</button>\r\n\r\n    <!-- edit modal -->\r\n    <p-dialog header=\"Article Details\" [(visible)]=\"displayDialog\" [responsive]=\"true\" showEffect=\"fade\" [modal]=\"true\" [width]=\"800\">\r\n        <div class=\"ui-g ui-fluid\" *ngIf=\"article\">\r\n            <div class=\"ui-g-12\">\r\n                <div class=\"ui-g-2\">\r\n                    <label for=\"title\">Title</label>\r\n                </div>\r\n                <div class=\"ui-g-10 p-0\">\r\n                    <input class=\"form-control\" required pInputText id=\"title\" [(ngModel)]=\"article.Title\" />\r\n                </div>\r\n            </div>\r\n            <div class=\"ui-g-12\">\r\n                <div class=\"ui-g-2\">\r\n                    <label for=\"description\">Description</label>\r\n                </div>\r\n                <div class=\"ui-g-10 p-0\">\r\n                    <p-editor [(ngModel)]=\"article.Description\" required pInputText id=\"description\" [style]=\"{'height':'200px'}\"></p-editor>\r\n                    \r\n                </div>\r\n            </div>\r\n            <div class=\"ui-g-12\">\r\n                <div class=\"ui-g-2\">\r\n                    <label for=\"ResultMenuId\">Result Menu</label>\r\n                </div>\r\n                <div *ngIf='resultMenu && resultMenu.length > 0' class=\"form-group\" [ngClass]=\"{'has-error':ResultMenuId.invalid && ResultMenuId.touched}\"\r\n                    class=\"ui-g-10 p-0\">\r\n                    <select [(ngModel)]=\"article.ResultMenuId\" #ResultMenuId=\"ngModel\" required class=\"form-control\" name=\"ResultMenuId\">\r\n                        <option *ngFor=\"let menu of resultMenu\" [value]=\"menu.ResultMenuId\">{{menu.Name}}</option>\r\n                    </select>\r\n                </div>\r\n            </div>\r\n        </div>\r\n        <p-footer>\r\n            <div class=\"ui-dialog-buttonpane ui-helper-clearfix\">\r\n                <button (click)=\"close()\" class=\"m-t-20 btn btn-danger\">\r\n                    <i class=\"fa fa-close\"></i>&nbsp; Cancel</button>\r\n                <button (click)=\"save()\" class=\"m-t-20 btn btn-primary\">\r\n                    <i class=\"fa fa-check\"></i>&nbsp; Save</button>\r\n            </div>\r\n        </p-footer>\r\n    </p-dialog>\r\n</section>"
 
 /***/ }),
 
@@ -3261,9 +3277,6 @@ var thankyou_component_1 = __webpack_require__("./src/app/account/thankyou/thank
 var alert_component_1 = __webpack_require__("./src/app/alert/alert.component.ts");
 var alert_service_1 = __webpack_require__("./src/app/shared/alert.service.ts");
 var activity_component_1 = __webpack_require__("./src/app/admin/activity/activity.component.ts");
-// import { FroalaEditorModule, FroalaViewModule } from 'angular-froala-wysiwyg';
-var angular2_froala_wysiwyg_1 = __webpack_require__("./node_modules/angular2-froala-wysiwyg/index.js");
-// import { QuillModule } from 'ngx-quill';
 var AppModule = /** @class */ (function () {
     function AppModule() {
     }
@@ -3330,9 +3343,7 @@ var AppModule = /** @class */ (function () {
                 table_1.TableModule,
                 dialog_1.DialogModule,
                 multiselect_1.MultiSelectModule,
-                editor_1.EditorModule,
-                angular2_froala_wysiwyg_1.FroalaEditorModule.forRoot(), angular2_froala_wysiwyg_1.FroalaViewModule.forRoot()
-                // QuillModule
+                editor_1.EditorModule
             ],
             declarations: [
                 // front user components
@@ -5273,8 +5284,8 @@ __webpack_require__("./node_modules/rxjs/_esm5/add/operator/map.js");
 var BaseService = /** @class */ (function () {
     function BaseService(http) {
         this.http = http;
-        // protected host: string = 'http://localhost:3000';
-        this.host = 'https://fiberfox-backend-ipek.herokuapp.com';
+        this.host = 'http://localhost:3000';
+        // protected host: string = 'https://fiberfox-backend-ipek.herokuapp.com';
         this.hostAPI = this.host + '/api';
     }
     BaseService.prototype.get = function (url, options) {
