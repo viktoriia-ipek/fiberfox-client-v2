@@ -809,7 +809,6 @@ var ResultComponent = /** @class */ (function () {
         // if filters then retrieves necessary data from sharedData to send to the server
         // else gets result menu based on selected question
         if (this.sharedDataService.data.filters || this.sharedDataService.data.boundaries) {
-            console.log('shared');
             this.isQuestion = false;
             var selectedFilters = null;
             if (this.sharedDataService.data.filters)
@@ -836,10 +835,8 @@ var ResultComponent = /** @class */ (function () {
         }
         else {
             if (this.sharedDataService.data.answer) {
-                console.log('non-shared');
                 this.dataService.getResultMenuByQuestionId(this.sharedDataService.data.answer.QuestionId)
                     .subscribe(function (data) {
-                    console.log('hiiiii');
                     console.log(data);
                     _this.relevantMenu = data;
                     if (_this.relevantMenu && _this.relevantMenu.length > 0) {
@@ -887,13 +884,8 @@ var ResultComponent = /** @class */ (function () {
     };
     ResultComponent.prototype.getAllArticles = function (menuList) {
         var _this = this;
-        console.log('menuList');
-        console.log(menuList);
         this.dataService.getMultipleArticles(menuList)
             .subscribe(function (d) {
-            console.log(d);
-            console.log('d[0]');
-            console.log(d[0]);
             _this.article = d[0];
             d.forEach(function (element) {
                 _this.article.Description += element.Description;
@@ -5506,8 +5498,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var BaseService = /** @class */ (function () {
     function BaseService(http) {
         this.http = http;
-        // protected host: string = 'http://localhost:3000';
         this.host = 'https://fiberfox-backend-ipek.herokuapp.com';
+        // protected host: string = 'https://fiberfox-backend-ipek.herokuapp.com';
         this.hostAPI = this.host + '/api';
     }
     BaseService.prototype.get = function (url, options) {
