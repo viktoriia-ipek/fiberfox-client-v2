@@ -888,7 +888,7 @@ var ResultComponent = /** @class */ (function () {
             .subscribe(function (d) {
             _this.article = d[0];
             d.forEach(function (element) {
-                _this.article.Description += element.Description;
+                _this.article.Description += d.Description;
             });
         });
     };
@@ -5498,8 +5498,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var BaseService = /** @class */ (function () {
     function BaseService(http) {
         this.http = http;
+        // protected host: string = 'http://localhost:3000';
         this.host = 'https://fiberfox-backend-ipek.herokuapp.com';
-        // protected host: string = 'https://fiberfox-backend-ipek.herokuapp.com';
         this.hostAPI = this.host + '/api';
     }
     BaseService.prototype.get = function (url, options) {
